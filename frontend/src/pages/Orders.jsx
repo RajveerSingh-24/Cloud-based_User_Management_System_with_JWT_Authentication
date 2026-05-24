@@ -107,7 +107,7 @@ const Orders = () => {
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{product.description?.substring(0, 50) || 'No details available.'}</div>
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem', fontWeight: 600, color: 'var(--accent-primary)' }}>
-                      ${product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
+                      ₹{product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
                     </td>
                     <td style={{ padding: '1.2rem 1.5rem' }}>
                       {getStatusBadge(order.status)}

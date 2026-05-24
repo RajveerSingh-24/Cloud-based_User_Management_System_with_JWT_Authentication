@@ -8,7 +8,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
+import ProductDetails from './pages/ProductDetails';
 import Orders from './pages/Orders';
+import Users from './pages/Users';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -25,11 +28,13 @@ function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="products" element={<Products />} />
+                <Route path="products/:id" element={<ProductDetails />} />
                 <Route path="orders" element={<Orders />} />
+                <Route path="settings" element={<Settings />} />
                 
                 {/* Admin Only Routes inside Dashboard */}
                 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                  <Route path="users" element={<div className="card"><h1>User Management (Admin Only)</h1></div>} />
+                  <Route path="users" element={<Users />} />
                 </Route>
               </Route>
             </Route>

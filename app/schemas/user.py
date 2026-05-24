@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 
 class UserBase(BaseModel):
     email: EmailStr
+    name: Optional[str] = None
     role: Optional[str] = "customer"
 
 
@@ -15,6 +16,7 @@ class UserCreate(UserBase):
         json_schema_extra={
             "example": {
                 "email": "customer@example.com",
+                "name": "Jane Doe",
                 "password": "strongpassword123",
                 "role": "customer",
             }
@@ -40,6 +42,7 @@ class UserResponse(UserInDBBase):
             "example": {
                 "id": 1,
                 "email": "customer@example.com",
+                "name": "Jane Doe",
                 "role": "customer",
                 "is_active": True,
             }

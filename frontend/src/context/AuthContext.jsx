@@ -45,8 +45,8 @@ export const AuthProvider = ({ children }) => {
     setUser(profile);
   };
 
-  const registerUser = async (email, password, role = 'customer') => {
-    await authService.register(email, password, role);
+  const registerUser = async (email, password, role = 'customer', name = '') => {
+    await authService.register(email, password, role, name);
     await login(email, password);
   };
 

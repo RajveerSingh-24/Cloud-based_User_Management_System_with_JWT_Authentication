@@ -3,7 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-
+from fastapi.staticfiles import StaticFiles
+import os
 import app.models
 from app.api.routes import api_router
 from app.core.config import settings
@@ -38,6 +39,10 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
+# Create uploads directory if it doesn't exist
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # --- MIDDLEWARE ---
 # 1. CORS Configuration
 app.add_middleware(
@@ -70,3 +75,6 @@ def root():
         "version": settings.VERSION,
         "docs": "/docs",
     }
+
+
+

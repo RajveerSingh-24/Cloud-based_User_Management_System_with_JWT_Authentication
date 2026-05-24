@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, X, Tag } from 'lucide-react';
+import { Package, Plus, X, Tag, Trash2, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +9,7 @@ import { useToast } from '../context/ToastContext';
 const Products = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,7 @@ const Products = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [imageFile, setImageFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canAddProduct = user?.role === 'admin' || user?.role === 'seller';
@@ -22,7 +25,10 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await productService.getProducts();
+      let data = await productService.getProducts();
+      if (user?.role === 'seller') {
+        data = data.filter(p => p.owner_id === user.id);
+      }
       setProducts(data);
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -48,15 +54,23 @@ const Products = () => {
 
     setIsSubmitting(true);
     try {
+      let imageUrl = null;
+      if (imageFile) {
+        const uploadResponse = await productService.uploadImage(imageFile);
+        imageUrl = uploadResponse.image_url;
+      }
+
       await productService.createProduct({
         name: name.trim(),
         description: description.trim(),
-        price: parseFloat(price)
+        price: parseFloat(price),
+        image_url: imageUrl
       });
       addToast("Product added to catalog successfully!", "success");
       setName('');
       setDescription('');
       setPrice('');
+      setImageFile(null);
       setIsModalOpen(false);
       fetchProducts();
     } catch (error) {
@@ -72,6 +86,19 @@ const Products = () => {
       addToast("Order placed successfully! Track it in the Orders ledger.", "success");
     } catch (error) {
       // Global Axios interceptor automatically creates the error toast!
+    }
+  };
+
+  const handleDeleteProduct = async (e, productId) => {
+    e.stopPropagation(); // prevent card click
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    
+    try {
+      await productService.deleteProduct(productId);
+      addToast("Product deleted successfully", "success");
+      fetchProducts();
+    } catch (error) {
+      // handled by interceptor
     }
   };
 
@@ -108,15 +135,32 @@ const Products = () => {
       ) : (
         <div className="product-grid">
           {products.map(product => (
-            <div key={product.id} className="card product-card">
-              <div className="product-image-placeholder">
-                <Tag size={40} color="var(--text-muted)" />
+            <div key={product.id} className="card product-card" onClick={() => navigate(`/products/${product.id}`)} style={{ cursor: 'pointer', position: 'relative' }}>
+              {(user?.role === 'admin' || user?.id === product.owner_id) && (
+                <button 
+                  onClick={(e) => handleDeleteProduct(e, product.id)}
+                  style={{
+                    position: 'absolute', top: '10px', right: '10px', 
+                    background: 'rgba(255,255,255,0.8)', border: 'none', 
+                    borderRadius: '50%', padding: '0.4rem', cursor: 'pointer', zIndex: 2
+                  }}
+                  title="Delete Product"
+                >
+                  <Trash2 size={18} color="var(--error-color)" />
+                </button>
+              )}
+              <div className="product-image-placeholder" style={{ overflow: 'hidden', padding: 0 }}>
+                {product.image_url ? (
+                  <img src={`http://localhost:8000${product.image_url}`} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <Tag size={40} color="var(--text-muted)" style={{ margin: 'auto' }} />
+                )}
               </div>
               <div style={{ flex: 1 }}>
                 <div className="flex-between" style={{ alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{product.name}</h3>
                   <span style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    ${parseFloat(product.price).toFixed(2)}
+                    ₹{parseFloat(product.price).toFixed(2)}
                   </span>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
@@ -124,9 +168,9 @@ const Products = () => {
                 </p>
               </div>
               <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                <button className="btn" style={{ flex: 1, justifyContent: 'center' }}>View Details</button>
+                <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}>View Details</button>
                 {user?.role === 'customer' && (
-                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => handleBuyProduct(product.id)}>Buy Now</button>
+                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); handleBuyProduct(product.id); }}>Buy Now</button>
                 )}
               </div>
             </div>
@@ -170,7 +214,7 @@ const Products = () => {
               </div>
               
               <div className="input-group">
-                <label>Price ($)</label>
+                <label>Price (₹)</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -180,6 +224,16 @@ const Products = () => {
                   onChange={e => setPrice(e.target.value)} 
                   required 
                   placeholder="0.00"
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Product Image</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  className="input-field" 
+                  onChange={e => setImageFile(e.target.files[0])} 
                 />
               </div>
               

@@ -10,10 +10,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="customer")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    products = relationship("Product", back_populates="owner")
-    orders = relationship("Order", back_populates="user")
+    products = relationship("Product", back_populates="owner", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
