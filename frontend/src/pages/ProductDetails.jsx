@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Tag, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Tag, ShieldCheck, Truck, RotateCcw, ShoppingCart } from 'lucide-react';
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
+import { useCart } from '../context/CartContext';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const { addToCart } = useCart();
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -130,13 +132,22 @@ const ProductDetails = () => {
           </p>
           
           {user?.role === 'customer' ? (
-            <button 
-              className="btn btn-primary" 
-              style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', fontSize: '1rem', marginTop: '1rem' }}
-              onClick={handleBuyProduct}
-            >
-              Buy Now
-            </button>
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button 
+                className="btn btn-primary" 
+                style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', fontSize: '1rem' }}
+                onClick={handleBuyProduct}
+              >
+                Buy Now
+              </button>
+              <button 
+                className="btn" 
+                style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', fontSize: '1rem', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
+                onClick={() => addToCart(product)}
+              >
+                <ShoppingCart size={18} style={{ marginRight: '0.5rem' }} /> Add to Cart
+              </button>
+            </div>
           ) : (
             <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: '8px', marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               Sign in as a customer to purchase this product.

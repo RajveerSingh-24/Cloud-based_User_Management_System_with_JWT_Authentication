@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, X, Tag, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Package, Plus, X, Tag, Trash2, Image as ImageIcon, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
+import { useCart } from '../context/CartContext';
 
 const Products = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,8 +19,12 @@ const Products = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [category, setCategory] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const CATEGORIES = ['Smartphones', 'Laptop', 'Headphone', 'Speaker'];
 
   const canAddProduct = user?.role === 'admin' || user?.role === 'seller';
 
@@ -64,12 +70,14 @@ const Products = () => {
         name: name.trim(),
         description: description.trim(),
         price: parseFloat(price),
-        image_url: imageUrl
+        image_url: imageUrl,
+        category: category || null
       });
       addToast("Product added to catalog successfully!", "success");
       setName('');
       setDescription('');
       setPrice('');
+      setCategory('');
       setImageFile(null);
       setIsModalOpen(false);
       fetchProducts();
@@ -102,6 +110,10 @@ const Products = () => {
     }
   };
 
+  const filteredProducts = selectedCategory === 'All' 
+    ? products 
+    : products.filter(p => p.category === selectedCategory);
+
   if (loading) {
     return (
       <div className="spinner-overlay">
@@ -124,31 +136,39 @@ const Products = () => {
         )}
       </div>
 
-      {products.length === 0 ? (
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        {['All', ...CATEGORIES].map(cat => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '20px',
+              border: selectedCategory === cat ? 'none' : '1px solid var(--border-color)',
+              background: selectedCategory === cat ? 'var(--accent-primary)' : 'transparent',
+              color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontWeight: 500,
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {filteredProducts.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
           <Package size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem' }} />
           <h3>No products found</h3>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-            {canAddProduct ? 'Get started by adding your first product to the store.' : 'Check back later for new inventory!'}
+            {products.length === 0 ? (canAddProduct ? 'Get started by adding your first product to the store.' : 'Check back later for new inventory!') : 'No products match the selected category.'}
           </p>
         </div>
       ) : (
         <div className="product-grid">
-          {products.map(product => (
+          {filteredProducts.map(product => (
             <div key={product.id} className="card product-card" onClick={() => navigate(`/products/${product.id}`)} style={{ cursor: 'pointer', position: 'relative' }}>
-              {(user?.role === 'admin' || user?.id === product.owner_id) && (
-                <button 
-                  onClick={(e) => handleDeleteProduct(e, product.id)}
-                  style={{
-                    position: 'absolute', top: '10px', right: '10px', 
-                    background: 'rgba(255,255,255,0.8)', border: 'none', 
-                    borderRadius: '50%', padding: '0.4rem', cursor: 'pointer', zIndex: 2
-                  }}
-                  title="Delete Product"
-                >
-                  <Trash2 size={18} color="var(--error-color)" />
-                </button>
-              )}
               <div className="product-image-placeholder" style={{ overflow: 'hidden', padding: 0 }}>
                 {product.image_url ? (
                   <img src={`http://localhost:8000${product.image_url}`} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -167,10 +187,24 @@ const Products = () => {
                   {product.description || 'No description provided.'}
                 </p>
               </div>
-              <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                <button className="btn" style={{ flex: 1, justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}>View Details</button>
+              <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button className="btn" style={{ flex: 1, minWidth: '100px', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}>View Details</button>
                 {user?.role === 'customer' && (
-                  <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); handleBuyProduct(product.id); }}>Buy Now</button>
+                  <>
+                    <button className="btn" style={{ flex: 1, minWidth: '100px', justifyContent: 'center', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }} onClick={(e) => { e.stopPropagation(); addToCart(product); }}>
+                      <ShoppingCart size={16} style={{ marginRight: '0.4rem' }} /> Add to Cart
+                    </button>
+                    <button className="btn btn-primary" style={{ flex: 1, minWidth: '100px', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); handleBuyProduct(product.id); }}>Buy Now</button>
+                  </>
+                )}
+                {(user?.role === 'admin' || user?.id === product.owner_id) && (
+                  <button 
+                    className="btn"
+                    style={{ flex: 1, minWidth: '100px', justifyContent: 'center', background: 'rgba(239, 68, 68, 0.05)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.1)' }}
+                    onClick={(e) => handleDeleteProduct(e, product.id)}
+                  >
+                    <Trash2 size={16} style={{ marginRight: '0.4rem' }} /> Delete
+                  </button>
                 )}
               </div>
             </div>
@@ -225,6 +259,21 @@ const Products = () => {
                   required 
                   placeholder="0.00"
                 />
+              </div>
+
+              <div className="input-group">
+                <label>Category</label>
+                <select
+                  className="input-field"
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  style={{ appearance: 'auto', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                >
+                  <option value="">Select a category (Optional)</option>
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="input-group">

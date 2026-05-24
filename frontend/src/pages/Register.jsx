@@ -23,7 +23,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (password !== confirmPassword) {
       return setError('Passwords do not match');
     }
@@ -60,7 +60,7 @@ const Register = () => {
               <line x1="17" y1="19" x2="7" y2="5" />
             </svg>
           </div>
-          
+
           <div className="visual-content">
             <p className="visual-overtitle">You can easily</p>
             <h1 className="visual-title">
@@ -95,10 +95,10 @@ const Register = () => {
               <label className="auth-input-label">Your full name</label>
               <div className="auth-input-wrapper">
                 <User className="input-icon-left" size={18} />
-                <input 
-                  type="text" 
-                  className="auth-input-field" 
-                  placeholder="Jane Doe"
+                <input
+                  type="text"
+                  className="auth-input-field"
+                  placeholder="Enter Your Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -110,9 +110,9 @@ const Register = () => {
               <label className="auth-input-label">Your email</label>
               <div className="auth-input-wrapper">
                 <Mail className="input-icon-left" size={18} />
-                <input 
-                  type="email" 
-                  className="auth-input-field" 
+                <input
+                  type="email"
+                  className="auth-input-field"
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -120,22 +120,22 @@ const Register = () => {
                 />
               </div>
             </div>
-            
+
             <div className="input-group">
               <label className="auth-input-label">Password</label>
               <div className="auth-input-wrapper">
                 <Lock className="input-icon-left" size={18} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  className="auth-input-field" 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="auth-input-field"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength="4"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="auth-input-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
@@ -149,17 +149,17 @@ const Register = () => {
               <label className="auth-input-label">Confirm Password</label>
               <div className="auth-input-wrapper">
                 <Lock className="input-icon-left" size={18} />
-                <input 
-                  type={showConfirmPassword ? "text" : "password"} 
-                  className="auth-input-field" 
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="auth-input-field"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength="4"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="auth-input-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
@@ -198,11 +198,11 @@ const Register = () => {
                 </button>
               </div>
             </div>
-            
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
-              style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', borderRadius: '10px' }} 
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', borderRadius: '10px' }}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Creating Account...' : 'Register'}

@@ -16,7 +16,9 @@ import {
   ArrowRight,
   TrendingUp,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  CheckCircle,
+  Truck
 } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
@@ -262,7 +264,8 @@ const Dashboard = () => {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                     <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Order ID</th>
-                    <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Product Name</th>
+                    {role === 'seller' && <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Customer</th>}
+                    <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Product</th>
                     <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Value</th>
                     <th style={{ padding: '0.8rem 0', fontWeight: 600, textAlign: 'right' }}>Status</th>
                   </tr>
@@ -270,9 +273,25 @@ const Dashboard = () => {
                 <tbody>
                   {(role === 'seller' ? sellerStats?.myOrders : data.orders).slice(0, 5).map(order => {
                     const product = productMap[order.product_id] || {};
+                    const customerName = order.user?.name || order.user?.email || `User #${order.user_id}`;
+                    const statusColor = 
+                      order.status === 'completed' ? { bg: 'rgba(34, 197, 94, 0.1)', text: '#22c55e' } :
+                      order.status === 'shipped'   ? { bg: 'rgba(56, 189, 248, 0.1)', text: '#38bdf8' } :
+                      order.status === 'cancelled' ? { bg: 'rgba(239, 68, 68, 0.1)',  text: '#ef4444' } :
+                                                     { bg: 'rgba(234, 179, 8, 0.1)',  text: '#eab308' };
                     return (
                       <tr key={order.id} style={{ borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
                         <td style={{ padding: '1rem 0', fontWeight: 600, color: 'var(--accent-primary)' }}>#TRX-{order.id}</td>
+                        {role === 'seller' && (
+                          <td style={{ padding: '1rem 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
+                                {customerName.charAt(0).toUpperCase()}
+                              </div>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>{customerName}</span>
+                            </div>
+                          </td>
+                        )}
                         <td style={{ padding: '1rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
                           {product.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Deleted Product</span>}
                         </td>
@@ -286,8 +305,8 @@ const Dashboard = () => {
                             borderRadius: '12px', 
                             fontWeight: 700,
                             textTransform: 'uppercase',
-                            background: order.status === 'completed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                            color: order.status === 'completed' ? 'rgb(34, 197, 94)' : 'rgb(234, 179, 8)'
+                            background: statusColor.bg,
+                            color: statusColor.text
                           }}>
                             {order.status}
                           </span>

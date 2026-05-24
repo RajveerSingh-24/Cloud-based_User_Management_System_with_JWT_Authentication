@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Trash2, User, Store, Shield, UserX, AlertTriangle } from 'lucide-react';
+import { Search, Trash2, User, Store, Shield, UserX, AlertTriangle, X, Clock, ShoppingBag } from 'lucide-react';
 import { userService } from '../services/userService';
+import { orderService } from '../services/orderService';
+import { productService } from '../services/productService';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../hooks/useAuth';
 
@@ -13,6 +15,10 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState('all'); // 'all', 'customer', 'seller', 'admin'
   const [loading, setLoading] = useState(true);
   const [deletingUserId, setDeletingUserId] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userOrders, setUserOrders] = useState([]);
+  const [productsMap, setProductsMap] = useState({});
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -45,6 +51,27 @@ const Users = () => {
       // Global interceptor handles general toast error, but close the modal
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  const handleUserClick = async (user) => {
+    setSelectedUser(user);
+    setDetailsLoading(true);
+    try {
+      const [allOrders, allProducts] = await Promise.all([
+        orderService.getOrders().catch(() => []),
+        productService.getProducts().catch(() => [])
+      ]);
+      const uOrders = allOrders.filter(o => o.user_id === user.id);
+      setUserOrders(uOrders);
+      
+      const pMap = {};
+      allProducts.forEach(p => pMap[p.id] = p);
+      setProductsMap(pMap);
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -198,7 +225,7 @@ const Users = () => {
             </thead>
             <tbody>
               {filteredUsers.map(user => (
-                <tr key={user.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition-fast)' }} className="table-row-hover">
+                <tr key={user.id} onClick={() => handleUserClick(user)} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition-fast)', cursor: 'pointer' }} className="table-row-hover">
                   <td style={{ padding: '1.2rem 1.5rem', fontWeight: 600 }}>#USR-{user.id}</td>
                   <td style={{ padding: '1.2rem 1.5rem' }}>
                     <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -228,7 +255,7 @@ const Users = () => {
                           color: '#ef4444',
                           borderColor: 'rgba(239, 68, 68, 0.1)'
                         }}
-                        onClick={() => setDeletingUserId(user.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeletingUserId(user.id); }}
                         title="Delete User Account"
                       >
                         <Trash2 size={16} />
@@ -274,6 +301,76 @@ const Users = () => {
             </div>
           );
         })()
+      )}
+
+      {/* User Details Modal */}
+      {selectedUser && (
+        <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%' }}>
+            <div className="flex-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', fontWeight: 700, fontSize: '1.2rem' }}>
+                  {(selectedUser.name || selectedUser.email).charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>{selectedUser.name || 'No Name'}</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{selectedUser.email}</p>
+                </div>
+              </div>
+              <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => setSelectedUser(null)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+              <div className="card" style={{ padding: '1rem', background: 'var(--bg-secondary)', border: 'none' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.3rem' }}>Account Role</p>
+                <div style={{ marginTop: '0.5rem' }}>{getRoleBadge(selectedUser.role)}</div>
+              </div>
+              <div className="card" style={{ padding: '1rem', background: 'var(--bg-secondary)', border: 'none' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.3rem' }}>Status</p>
+                <div style={{ marginTop: '0.5rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: selectedUser.is_active ? '#22c55e' : '#ef4444', fontSize: '0.9rem', fontWeight: 600 }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedUser.is_active ? '#22c55e' : '#ef4444' }}></span>
+                    {selectedUser.is_active ? 'Active' : 'Suspended'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShoppingBag size={18} /> Buying History
+            </h3>
+            
+            {detailsLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div className="spinner" style={{ width: '24px', height: '24px', margin: '0 auto', borderWidth: '2px' }}></div>
+                <p style={{ color: 'var(--text-muted)', marginTop: '1rem', fontSize: '0.9rem' }}>Loading user history...</p>
+              </div>
+            ) : userOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', background: 'var(--bg-secondary)', borderRadius: '12px' }}>
+                <Clock size={32} color="var(--text-muted)" style={{ margin: '0 auto 0.5rem' }} />
+                <p style={{ color: 'var(--text-secondary)' }}>No orders found for this user.</p>
+              </div>
+            ) : (
+              <div style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                {userOrders.map(order => {
+                  const product = productsMap[order.product_id] || { name: 'Unknown Product', price: 0 };
+                  return (
+                    <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', borderRadius: '12px', marginBottom: '0.5rem' }}>
+                      <div>
+                        <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{product.name}</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Order #{order.id} • {order.status}</p>
+                      </div>
+                      <p style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>₹{parseFloat(product.price).toFixed(2)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+          </div>
+        </div>
       )}
     </div>
   );

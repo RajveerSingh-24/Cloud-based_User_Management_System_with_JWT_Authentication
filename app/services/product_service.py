@@ -16,6 +16,7 @@ def create_product(db: Session, product_in: ProductCreate, owner_id: int):
         description=product_in.description,
         price=product_in.price,
         image_url=product_in.image_url,
+        category=product_in.category,
         owner_id=owner_id,
     )
     db.add(product)

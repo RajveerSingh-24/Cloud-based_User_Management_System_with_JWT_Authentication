@@ -8,6 +8,7 @@ class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
     price: Decimal
+    category: Optional[str] = None
     image_url: Optional[str] = None
 
 
@@ -18,6 +19,7 @@ class ProductCreate(ProductBase):
                 "name": "Wireless Mouse",
                 "description": "Ergonomic wireless mouse with 2.4GHz receiver",
                 "price": 29.99,
+                "category": "Accessories",
                 "image_url": "/uploads/mouse.jpg"
             }
         }
@@ -36,6 +38,7 @@ class ProductResponse(ProductBase):
                 "name": "Wireless Mouse",
                 "description": "Ergonomic wireless mouse with 2.4GHz receiver",
                 "price": 29.99,
+                "category": "Accessories",
                 "image_url": "/uploads/mouse.jpg",
                 "owner_id": 1,
             }
