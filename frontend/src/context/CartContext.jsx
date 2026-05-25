@@ -9,7 +9,7 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     try {
-      const saved = localStorage.getItem('nexus_cart');
+      const saved = localStorage.getItem('tekora_cart');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -19,7 +19,7 @@ export const CartProvider = ({ children }) => {
   const { addToast } = useToast();
 
   useEffect(() => {
-    localStorage.setItem('nexus_cart', JSON.stringify(cartItems));
+    localStorage.setItem('tekora_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product) => {

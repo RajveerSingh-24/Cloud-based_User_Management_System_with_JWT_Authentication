@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff, ShoppingBag } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('admin@test.com');
@@ -35,17 +35,28 @@ const Login = () => {
       <div className="auth-card">
         {/* Left Side: Visual Mesh Gradient Pane */}
         <div className="auth-visual-pane">
-          <div className="visual-logo-wrapper">
-            <svg className="visual-logo" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="2" x2="12" y2="22" />
-              <line x1="17" y1="5" x2="7" y2="19" />
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <line x1="17" y1="19" x2="7" y2="5" />
-            </svg>
+          <div className="visual-logo-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', alignSelf: 'flex-start' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              background: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 15px rgba(124, 58, 237, 0.3)',
+              padding: '4px',
+              overflow: 'hidden'
+            }}>
+              <img src="/tekora_logo.png" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.35)' }} alt="Tekora" />
+            </div>
+            <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'white', letterSpacing: '-0.5px', fontFamily: 'Outfit' }}>
+              Tekora
+            </span>
           </div>
           
           <div className="visual-content">
-            <p className="visual-overtitle">You can easily</p>
+            <p className="visual-overtitle">eCommerce Hub</p>
             <h1 className="visual-title">
               Get access to your personal ecommerce workspace for total clarity and control.
             </h1>
@@ -55,13 +66,20 @@ const Login = () => {
         {/* Right Side: Sign In Form Pane */}
         <div className="auth-form-pane">
           <div className="auth-form-header">
-            <div className="form-logo-mark">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="2" x2="12" y2="22" />
-                <line x1="17" y1="5" x2="7" y2="19" />
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <line x1="17" y1="19" x2="7" y2="5" />
-              </svg>
+            <div className="form-logo-mark" style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              background: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '1rem',
+              boxShadow: '0 4px 12px var(--brand-glow)',
+              padding: '4px',
+              overflow: 'hidden'
+            }}>
+              <img src="/tekora_logo.png" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.35)' }} alt="Tekora" />
             </div>
             <h2>Sign in to account</h2>
             <p>Access your orders, workspace, and personal catalog in one place.</p>

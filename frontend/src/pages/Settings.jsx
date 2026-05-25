@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { User, Mail, Shield, Bell, Lock, Save } from 'lucide-react';
+import { User, Mail, Shield, Bell, Lock, Save, Sparkles, Check } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 const Settings = () => {
@@ -15,96 +15,213 @@ const Settings = () => {
     addToast("Settings saved successfully!", "success");
   };
 
+  // Determine role-based badge class & custom label
+  const getRoleBadge = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+        return <span className="role-badge role-badge-admin"><Shield size={12} /> System Admin</span>;
+      case 'seller':
+        return <span className="role-badge role-badge-seller"><Sparkles size={12} /> Verified Seller</span>;
+      case 'customer':
+      default:
+        return <span className="role-badge role-badge-customer"><User size={12} /> Prime Customer</span>;
+    }
+  };
+
   return (
-    <div style={{ animation: 'fadeIn 0.5s ease-out', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.3rem' }}>Account Settings</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Manage your profile preferences and security settings.</p>
+    <div style={{ animation: 'fadeIn 0.5s ease-out', maxWidth: '900px', margin: '0 auto' }}>
+      {/* Page Header */}
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.3rem' }}>
+          Account Settings
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+          Manage your profile preferences, notifications, and credentials.
+        </p>
       </div>
 
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <User size={20} color="var(--accent-primary)" /> Profile Information
-        </h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold' }}>
-              {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p style={{ fontSize: '1.2rem', fontWeight: 700 }}>{user?.name || 'User'}</p>
-              <p style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem' }}>
-                <Mail size={14} /> {user?.email}
+      {/* Profile Overview Card */}
+      <div className="card" style={{ 
+        marginBottom: '2rem', 
+        background: 'rgba(246, 244, 255, 0.45)', 
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        border: '1px solid rgba(255, 255, 255, 0.55)', 
+        borderRadius: '24px',
+        padding: '2rem'
+      }}>
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Glowing Avatar Sphere */}
+          <div 
+            className="settings-avatar-glow"
+            style={{ 
+              width: '84px', 
+              height: '84px', 
+              borderRadius: '50%', 
+              background: 'linear-gradient(135deg, var(--brand-primary), var(--accent-primary))', 
+              color: 'white', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '2.2rem', 
+              fontWeight: 800,
+              flexShrink: 0,
+              cursor: 'pointer'
+            }}
+          >
+            {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+          </div>
+
+          {/* Profile metadata block */}
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+              {user?.name || 'User Profile'}
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <p style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <Mail size={14} color="var(--brand-primary)" /> {user?.email}
               </p>
-              <p style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.3rem', textTransform: 'capitalize' }}>
-                <Shield size={14} /> Role: {user?.role}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                {getRoleBadge(user?.role)}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid-cards" style={{ gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '0' }}>
+      {/* Details Split Panels */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '2rem',
+        marginTop: '0'
+      }}>
         
-        {/* Preferences */}
-        <div className="card">
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Bell size={18} color="var(--accent-primary)" /> Preferences
+        {/* Preferences Management Card */}
+        <div className="card" style={{
+          background: 'rgba(246, 244, 255, 0.45)', 
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          border: '1px solid rgba(255, 255, 255, 0.55)', 
+          borderRadius: '24px',
+          padding: '1.75rem',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Bell size={18} color="var(--brand-primary)" /> Notification Settings
           </h3>
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          
+          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.8rem', flex: 1 }}>
+            {/* Toggle 1 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
               <div>
-                <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Push Notifications</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Receive alerts for order updates.</p>
+                <p style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>Push Notifications</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>Receive instant alerts for delivery updates.</p>
               </div>
-              <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
-                <input type="checkbox" checked={notificationsEnabled} onChange={(e) => setNotificationsEnabled(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
-                <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: notificationsEnabled ? 'var(--accent-primary)' : 'var(--bg-primary)', transition: '.4s', borderRadius: '34px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ position: 'absolute', content: '""', height: '16px', width: '16px', left: notificationsEnabled ? '22px' : '4px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }}></span>
-                </span>
+              <label className="switch-container">
+                <input 
+                  type="checkbox" 
+                  checked={notificationsEnabled} 
+                  onChange={(e) => setNotificationsEnabled(e.target.checked)} 
+                  className="switch-input"
+                />
+                <span className="switch-slider"></span>
               </label>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Toggle 2 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
               <div>
-                <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Marketing Emails</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Receive promotional offers.</p>
+                <p style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>Marketing Bulletins</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>Receive custom deals and newsletter discounts.</p>
               </div>
-              <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
-                <input type="checkbox" checked={marketingEnabled} onChange={(e) => setMarketingEnabled(e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
-                <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: marketingEnabled ? 'var(--accent-primary)' : 'var(--bg-primary)', transition: '.4s', borderRadius: '34px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ position: 'absolute', content: '""', height: '16px', width: '16px', left: marketingEnabled ? '22px' : '4px', bottom: '3px', backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }}></span>
-                </span>
+              <label className="switch-container">
+                <input 
+                  type="checkbox" 
+                  checked={marketingEnabled} 
+                  onChange={(e) => setMarketingEnabled(e.target.checked)} 
+                  className="switch-input"
+                />
+                <span className="switch-slider"></span>
               </label>
             </div>
             
-            <button type="submit" className="btn btn-primary" style={{ marginTop: 'auto', alignSelf: 'flex-start' }}>
-              <Save size={16} /> Save Preferences
+            <button 
+              type="submit" 
+              className="btn" 
+              style={{ 
+                marginTop: 'auto', 
+                alignSelf: 'flex-start',
+                padding: '0.6rem 1.2rem',
+                fontSize: '0.85rem',
+                borderRadius: '12px',
+                fontWeight: 700,
+                background: 'var(--brand-primary)',
+                color: 'white',
+                border: 'none',
+                boxShadow: '0 4px 12px var(--brand-glow)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              <Save size={14} /> <span>Save Preferences</span>
             </button>
           </form>
         </div>
 
-        {/* Security (Read Only / Placeholder) */}
-        <div className="card">
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Lock size={18} color="var(--accent-primary)" /> Security
+        {/* Security Credentials Card */}
+        <div className="card" style={{
+          background: 'rgba(246, 244, 255, 0.45)', 
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          border: '1px solid rgba(255, 255, 255, 0.55)', 
+          borderRadius: '24px',
+          padding: '1.75rem'
+        }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Lock size={18} color="var(--brand-primary)" /> Credentials & Security
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
+            {/* Setting Box 1 */}
             <div>
-              <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Password</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Last changed: 30 days ago</p>
-              <button className="btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }} onClick={() => addToast("Password change is disabled in demo mode", "info")}>
-                Update Password
+              <p style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>Password Security</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem', marginBottom: '0.8rem' }}>Last modified: 30 days ago</p>
+              <button 
+                className="btn" 
+                style={{ 
+                  fontSize: '0.8rem', 
+                  padding: '0.45rem 0.9rem',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  boxShadow: 'var(--shadow-sm)'
+                }} 
+                onClick={() => addToast("Password update is locked in demonstration mode.", "info")}
+              >
+                Change Password
               </button>
             </div>
 
+            {/* Setting Box 2 */}
             <div>
-              <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Two-Factor Authentication</p>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Add an extra layer of security.</p>
-              <button className="btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }} onClick={() => addToast("2FA setup is disabled in demo mode", "info")}>
-                Enable 2FA
+              <p style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>Two-Factor Verification (2FA)</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem', marginBottom: '0.8rem' }}>Protect your account with an authenticator app.</p>
+              <button 
+                className="btn" 
+                style={{ 
+                  fontSize: '0.8rem', 
+                  padding: '0.45rem 0.9rem',
+                  borderRadius: '10px',
+                  fontWeight: 700,
+                  boxShadow: 'var(--shadow-sm)'
+                }} 
+                onClick={() => addToast("Multi-Factor authentication is disabled in demonstration mode.", "info")}
+              >
+                Enable Multi-Factor 2FA
               </button>
             </div>
           </div>

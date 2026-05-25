@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { userService } from '../services/userService';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import CustomerHome from './CustomerHome';
 import { 
   Package, 
@@ -21,21 +21,64 @@ import {
   Truck
 } from 'lucide-react';
 
-const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
-  <div className="card flex-between" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center' }}>
+const StatCard = ({ title, value, icon: Icon, subtitle, onClick }) => (
+  <div 
+    className="card" 
+    onClick={onClick}
+    style={{ 
+      padding: '1.5rem', 
+      display: 'flex', 
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      background: 'rgba(246, 244, 255, 0.45)', 
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      border: '1px solid rgba(255, 255, 255, 0.55)', 
+      borderRadius: '24px',
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      cursor: 'pointer'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = 'translateY(-4px)';
+      e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+      e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.55)';
+    }}
+  >
     <div style={{ flex: 1 }}>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.4rem' }}>{title}</p>
-      <h3 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{value}</h3>
-      {subtitle && <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{subtitle}</p>}
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>
+        {title}
+      </p>
+      <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+        {value}
+      </h3>
+      {subtitle && <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500 }}>{subtitle}</p>}
     </div>
-    <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: `rgba(${color}, 0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '1rem' }}>
-      <Icon size={26} style={{ color: `rgb(${color})` }} />
+    <div style={{ 
+      width: '54px', 
+      height: '54px', 
+      borderRadius: '16px', 
+      background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(0, 229, 255, 0.1))', 
+      color: 'var(--brand-primary)',
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      marginLeft: '1rem',
+      flexShrink: 0
+    }}>
+      <Icon size={24} />
     </div>
   </div>
 );
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = user?.role || 'customer';
 
   const [loading, setLoading] = useState(true);
@@ -100,8 +143,12 @@ const Dashboard = () => {
     data.products.forEach(p => { productMap[p.id] = p; });
 
     const totalRevenue = data.orders.reduce((acc, order) => {
-      const price = parseFloat(productMap[order.product_id]?.price || 0);
-      return acc + price;
+      // Exclude cancelled transactions for total sales
+      if (order.status?.toLowerCase() !== 'cancelled') {
+        const price = parseFloat(productMap[order.product_id]?.price || 0);
+        return acc + price;
+      }
+      return acc;
     }, 0);
 
     return {
@@ -128,8 +175,11 @@ const Dashboard = () => {
     data.products.forEach(p => { productMap[p.id] = p; });
 
     const totalEarnings = myOrders.reduce((acc, order) => {
-      const price = parseFloat(productMap[order.product_id]?.price || 0);
-      return acc + price;
+      if (order.status?.toLowerCase() !== 'cancelled') {
+        const price = parseFloat(productMap[order.product_id]?.price || 0);
+        return acc + price;
+      }
+      return acc;
     }, 0);
 
     const uniqueCustomers = new Set(myOrders.map(o => o.user_id)).size;
@@ -144,31 +194,6 @@ const Dashboard = () => {
     };
   })();
 
-  // --- STATS COMPUTATION FOR CUSTOMER ---
-  const customerStats = (() => {
-    if (role !== 'customer') return null;
-    
-    const myOrders = data.orders; // Already filtered by backend for normal customers
-    const productMap = {};
-    data.products.forEach(p => { productMap[p.id] = p; });
-
-    const totalSpent = myOrders.reduce((acc, order) => {
-      const price = parseFloat(productMap[order.product_id]?.price || 0);
-      return acc + price;
-    }, 0);
-
-    const avgSpent = myOrders.length > 0 ? (totalSpent / myOrders.length) : 0;
-    const pendingOrdersCount = myOrders.filter(o => o.status === 'pending').length;
-
-    return {
-      myOrdersCount: myOrders.length,
-      totalSpent: totalSpent.toFixed(2),
-      avgSpent: avgSpent.toFixed(2),
-      pendingOrdersCount,
-      myOrders
-    };
-  })();
-
   // Map products for displaying details in tables
   const productMap = {};
   data.products.forEach(p => { productMap[p.id] = p; });
@@ -177,139 +202,188 @@ const Dashboard = () => {
     return <CustomerHome />;
   }
 
+  const isSeller = role === 'seller';
+  const isAdmin = role === 'admin';
+  const showCustomerCol = isSeller || isAdmin;
+
+  const getStatusBadge = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#22c55e', background: 'rgba(34, 197, 94, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+            Completed
+          </span>
+        );
+      case 'shipped':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+            Shipped
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+            Cancelled
+          </span>
+        );
+      case 'pending':
+      default:
+        return (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#eab308', background: 'rgba(234, 179, 8, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+            Pending
+          </span>
+        );
+    }
+  };
+
   return (
-    <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+    <div style={{ animation: 'fadeIn 0.5s ease-out', paddingBottom: '1.5rem' }}>
       
       {/* Welcome Header */}
-      <div style={{ marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {role === 'admin' && <ShieldCheck size={28} style={{ color: 'var(--accent-primary)' }} />}
-          {role === 'seller' && <TrendingUp size={28} style={{ color: 'var(--accent-primary)' }} />}
-          {role === 'customer' && <UserCheck size={28} style={{ color: 'var(--accent-primary)' }} />}
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
-            Welcome back, <span className="text-gradient">{user?.name || user?.email?.split('@')[0] || 'User'}</span>
+      <div style={{ marginBottom: '2.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {role === 'admin' && <ShieldCheck size={28} style={{ color: 'var(--brand-primary)' }} />}
+          {role === 'seller' && <TrendingUp size={28} style={{ color: 'var(--brand-primary)' }} />}
+          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Welcome back, <span className="text-gradient" style={{ background: 'linear-gradient(135deg, var(--brand-primary), var(--accent-secondary))', WebkitBackgroundClip: 'text' }}>{user?.name || user?.email?.split('@')[0] || 'Administrator'}</span>
           </h1>
         </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-          {role === 'admin' && 'Enterprise System Administration Control Center. All services are active.'}
+          {role === 'admin' && 'Enterprise System Administration Control Center. All services are fully operational.'}
           {role === 'seller' && 'Manage your store listings, track incoming customer orders and oversee revenue statistics.'}
-          {role === 'customer' && 'Browse the latest products, manage your orders, and checkout seamlessly.'}
         </p>
       </div>
 
       {/* ADMIN STATS CARDS */}
       {role === 'admin' && adminStats && (
-        <div className="grid-cards" style={{ marginBottom: '2.5rem' }}>
-          <StatCard title="System Revenue" value={`₹${adminStats.totalRevenue}`} icon={DollarSign} color="34, 197, 94" subtitle="Total value of transactions" />
-          <StatCard title="Registered Users" value={adminStats.totalUsers} icon={Users} color="99, 102, 241" subtitle="Active client profiles" />
-          <StatCard title="Active Listings" value={adminStats.totalProducts} icon={Package} color="168, 85, 247" subtitle="Global catalog entries" />
-          <StatCard title="Total Transactions" value={adminStats.totalOrders} icon={ShoppingCart} color="14, 165, 233" subtitle="System order count" />
+        <div className="grid-cards" style={{ marginBottom: '2.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+          <StatCard title="System Revenue" value={`₹${adminStats.totalRevenue}`} icon={DollarSign} subtitle="Overall transaction value" onClick={() => navigate('/orders')} />
+          <StatCard title="Registered Users" value={adminStats.totalUsers} icon={Users} subtitle="Active profile logs" onClick={() => navigate('/users')} />
+          <StatCard title="Active Listings" value={adminStats.totalProducts} icon={Package} subtitle="Global catalog items" onClick={() => navigate('/products')} />
+          <StatCard title="Total Transactions" value={adminStats.totalOrders} icon={ShoppingCart} subtitle="System order count" onClick={() => navigate('/orders')} />
         </div>
       )}
 
       {/* SELLER STATS CARDS */}
       {role === 'seller' && sellerStats && (
-        <div className="grid-cards" style={{ marginBottom: '2.5rem' }}>
-          <StatCard title="Store Earnings" value={`₹${sellerStats.totalEarnings}`} icon={DollarSign} color="34, 197, 94" subtitle="Accumulated sales volume" />
-          <StatCard title="Incoming Orders" value={sellerStats.myOrdersCount} icon={ShoppingCart} color="14, 165, 233" subtitle="Orders for your products" />
-          <StatCard title="My Products" value={sellerStats.myProductsCount} icon={Package} color="168, 85, 247" subtitle="Catalog items listed" />
-          <StatCard title="Total Customers" value={sellerStats.uniqueCustomers} icon={Users} color="99, 102, 241" subtitle="Unique customer count" />
+        <div className="grid-cards" style={{ marginBottom: '2.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+          <StatCard title="Store Earnings" value={`₹${sellerStats.totalEarnings}`} icon={DollarSign} subtitle="Accumulated sales volume" onClick={() => navigate('/orders')} />
+          <StatCard title="Incoming Orders" value={sellerStats.myOrdersCount} icon={ShoppingCart} subtitle="Orders for your products" onClick={() => navigate('/orders')} />
+          <StatCard title="My Products" value={sellerStats.myProductsCount} icon={Package} subtitle="Catalog items listed" onClick={() => navigate('/products')} />
+          <StatCard title="Total Customers" value={sellerStats.uniqueCustomers} icon={Users} subtitle="Unique customer profiles" onClick={() => navigate('/orders')} />
         </div>
       )}
 
-      {/* CUSTOMER STATS CARDS */}
-      {role === 'customer' && customerStats && (
-        <div className="grid-cards" style={{ marginBottom: '2.5rem' }}>
-          <StatCard title="Total Expenses" value={`₹${customerStats.totalSpent}`} icon={DollarSign} color="34, 197, 94" subtitle="Overall amount spent" />
-          <StatCard title="Orders Placed" value={customerStats.myOrdersCount} icon={ShoppingCart} color="14, 165, 233" subtitle="Total successful orders" />
-          <StatCard title="Avg. Order Value" value={`₹${customerStats.avgSpent}`} icon={Activity} color="99, 102, 241" subtitle="Average purchase cost" />
-          <StatCard title="Pending Checks" value={customerStats.pendingOrdersCount} icon={Clock} color="234, 179, 8" subtitle="Awaiting processing" />
-        </div>
-      )}
-
-      {/* LOWER PANEL: Dynamic Lists & Data Visualizations */}
-      <div className="grid-cards" style={{ gridTemplateColumns: '2fr 1.2fr', alignItems: 'start' }}>
+      {/* LOWER PANEL: Dynamic Lists & Data Ledgers */}
+      <div className="grid-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', alignItems: 'stretch' }}>
         
-        {/* Main List Box */}
-        <div className="card" style={{ padding: '1.75rem', minHeight: '380px' }}>
-          <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+        {/* Recent Transactions List Panel */}
+        <div 
+          className="card" 
+          style={{ 
+            padding: '1.75rem', 
+            minHeight: '380px',
+            background: 'rgba(246, 244, 255, 0.45)', 
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.55)', 
+            borderRadius: '24px',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <div className="flex-between" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               {role === 'admin' && 'Recent Platform Transactions'}
               {role === 'seller' && 'Recent Store Orders'}
-              {role === 'customer' && 'Recent Purchases'}
             </h3>
             <Link 
               to="/orders" 
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', transition: 'var(--transition-fast)' }}
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '0.3rem', 
+                color: 'var(--brand-primary)', 
+                fontSize: '0.85rem', 
+                fontWeight: 700, 
+                textDecoration: 'none', 
+                transition: 'var(--transition-fast)' 
+              }}
               className="hover-translate"
             >
-              View All <ArrowRight size={14} />
+              <span>View All</span> <ArrowRight size={14} />
             </Link>
           </div>
 
           {/* Table displaying matching database listings */}
           {data.orders.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '240px', color: 'var(--text-muted)' }}>
-              <ShoppingBag size={42} style={{ marginBottom: '1rem', strokeWidth: 1.5 }} />
-              <p style={{ fontSize: '0.9rem', fontWeight: 500 }}>No system activity recorded yet</p>
-              {role === 'customer' && (
-                <Link to="/products" className="btn" style={{ marginTop: '1rem', fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
-                  Browse Catalog
-                </Link>
-              )}
+              <ShoppingBag size={42} style={{ marginBottom: '1rem', strokeWidth: 1.5, opacity: 0.6 }} />
+              <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>No platform transactions logged yet.</p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <div style={{ overflowX: 'auto', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '450px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Order ID</th>
-                    {role === 'seller' && <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Customer</th>}
-                    <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Product</th>
-                    <th style={{ padding: '0.8rem 0', fontWeight: 600 }}>Value</th>
-                    <th style={{ padding: '0.8rem 0', fontWeight: 600, textAlign: 'right' }}>Status</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                    <th style={{ padding: '0.8rem 0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>ID</th>
+                    {showCustomerCol && <th style={{ padding: '0.8rem 0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Customer</th>}
+                    <th style={{ padding: '0.8rem 0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Product</th>
+                    <th style={{ padding: '0.8rem 0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Price</th>
+                    <th style={{ padding: '0.8rem 0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(role === 'seller' ? sellerStats?.myOrders : data.orders).slice(0, 5).map(order => {
                     const product = productMap[order.product_id] || {};
                     const customerName = order.user?.name || order.user?.email || `User #${order.user_id}`;
-                    const statusColor = 
-                      order.status === 'completed' ? { bg: 'rgba(34, 197, 94, 0.1)', text: '#22c55e' } :
-                      order.status === 'shipped'   ? { bg: 'rgba(56, 189, 248, 0.1)', text: '#38bdf8' } :
-                      order.status === 'cancelled' ? { bg: 'rgba(239, 68, 68, 0.1)',  text: '#ef4444' } :
-                                                     { bg: 'rgba(234, 179, 8, 0.1)',  text: '#eab308' };
+                    
                     return (
-                      <tr key={order.id} style={{ borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
-                        <td style={{ padding: '1rem 0', fontWeight: 600, color: 'var(--accent-primary)' }}>#TRX-{order.id}</td>
-                        {role === 'seller' && (
-                          <td style={{ padding: '1rem 0' }}>
+                      <tr 
+                        key={order.id} 
+                        style={{ borderBottom: '1px solid rgba(21, 16, 42, 0.05)', fontSize: '0.88rem' }}
+                      >
+                        <td style={{ padding: '0.9rem 0.5rem', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                          #TRX-{order.id}
+                        </td>
+                        
+                        {showCustomerCol && (
+                          <td style={{ padding: '0.9rem 0.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
+                              <div style={{ 
+                                width: '24px', 
+                                height: '24px', 
+                                borderRadius: '50%', 
+                                background: 'linear-gradient(135deg, var(--brand-primary), var(--accent-primary))', 
+                                color: 'white',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                fontSize: '0.65rem', 
+                                fontWeight: 800, 
+                                flexShrink: 0,
+                                boxShadow: '0 2px 6px rgba(124, 58, 237, 0.15)'
+                              }}>
                                 {customerName.charAt(0).toUpperCase()}
                               </div>
-                              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>{customerName}</span>
+                              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {customerName}
+                              </span>
                             </div>
                           </td>
                         )}
-                        <td style={{ padding: '1rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
+
+                        <td style={{ padding: '0.9rem 0.5rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {product.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Deleted Product</span>}
                         </td>
-                        <td style={{ padding: '1rem 0', color: 'var(--text-secondary)' }}>
-                          ₹{parseFloat(product.price || 0).toFixed(2)}
+                        
+                        <td style={{ padding: '0.9rem 0.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          ₹{product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
                         </td>
-                        <td style={{ padding: '1rem 0', textAlign: 'right' }}>
-                          <span style={{ 
-                            fontSize: '0.75rem', 
-                            padding: '0.2rem 0.6rem', 
-                            borderRadius: '12px', 
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            background: statusColor.bg,
-                            color: statusColor.text
-                          }}>
-                            {order.status}
-                          </span>
+                        
+                        <td style={{ padding: '0.9rem 0.5rem', textAlign: 'right' }}>
+                          {getStatusBadge(order.status)}
                         </td>
                       </tr>
                     );
@@ -319,49 +393,104 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-
-        {/* Secondary Info Box */}
-        <div className="card" style={{ padding: '1.75rem', minHeight: '380px' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '1.5rem' }}>
-            {role === 'admin' && 'Enterprise Catalog'}
+ 
+        {/* Enterprise Catalog Highlights Preview */}
+        <div 
+          className="card" 
+          style={{ 
+            padding: '1.75rem', 
+            minHeight: '380px',
+            background: 'rgba(246, 244, 255, 0.45)', 
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.55)', 
+            borderRadius: '24px',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
+            {role === 'admin' && 'Enterprise Catalog Preview'}
             {role === 'seller' && 'My Active Listings'}
-            {role === 'customer' && 'Catalog Highlights'}
           </h3>
-
+ 
           {data.products.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '240px', color: 'var(--text-muted)' }}>
-              <Package size={42} style={{ marginBottom: '1rem', strokeWidth: 1.5 }} />
-              <p style={{ fontSize: '0.9rem', fontWeight: 500 }}>No products available yet</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '240px', color: 'var(--text-muted)', flex: 1 }}>
+              <Package size={42} style={{ marginBottom: '1rem', strokeWidth: 1.5, opacity: 0.6 }} />
+              <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>No products available yet</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
               {(role === 'seller' ? sellerStats?.myProducts : data.products).slice(0, 4).map(product => (
-                <div key={product.id} className="flex-between" style={{ padding: '0.75rem 1rem', borderRadius: '12px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+                <div 
+                  key={product.id} 
+                  style={{ 
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.8rem 1.1rem', 
+                    borderRadius: '16px', 
+                    background: 'rgba(246, 244, 255, 0.65)', 
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    transition: 'all 0.25s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.borderColor = 'var(--border-color-hover)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.45)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
                   <div style={{ overflow: 'hidden', marginRight: '0.5rem' }}>
-                    <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <p style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {product.name}
                     </p>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '0.1rem' }}>
                       ID: #{product.id}
                     </p>
                   </div>
-                  <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--accent-primary)', whiteSpace: 'nowrap' }}>
-                    ₹{parseFloat(product.price).toFixed(2)}
+                  <p style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                    ₹{product.price ? parseFloat(product.price).toFixed(2) : '0.00'}
                   </p>
                 </div>
               ))}
               
-              <Link to="/products" className="btn text-center" style={{ marginTop: '0.5rem', width: '100%', display: 'block', textDecoration: 'none', boxSizing: 'border-box' }}>
-                Browse Full Catalog
+              <Link 
+                to="/products" 
+                className="btn" 
+                style={{ 
+                  marginTop: 'auto', 
+                  width: '100%', 
+                  textDecoration: 'none', 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.65rem',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                <span>Browse Full Catalog</span>
+                <ArrowRight size={14} />
               </Link>
             </div>
           )}
         </div>
-
+ 
       </div>
       
     </div>
   );
 };
-
+ 
 export default Dashboard;

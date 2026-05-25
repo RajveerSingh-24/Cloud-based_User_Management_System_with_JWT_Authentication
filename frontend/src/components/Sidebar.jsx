@@ -10,10 +10,10 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
-        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ShoppingBag size={18} color="white" />
+        <div className="sidebar-logo-icon" style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: '2px', overflow: 'hidden' }}>
+          <img src="/tekora_logo.png" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.35)' }} alt="Tekora" />
         </div>
-        <span>Nexus<span className="text-gradient">Commerce</span></span>
+        <span className="sidebar-logo-text">Tekora</span>
         <button className="navbar-menu-btn" style={{ marginLeft: 'auto' }} onClick={closeSidebar}>
           <X size={20} />
         </button>
@@ -22,7 +22,8 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       <nav className="sidebar-nav">
         <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
           <LayoutDashboard size={20} />
-          Dashboard
+          <span className="nav-label">{role === 'customer' ? 'Home' : 'Dashboard'}</span>
+          <span className="nav-tooltip">{role === 'customer' ? 'Home' : 'Dashboard'}</span>
         </NavLink>
         
         {/* Admin: Users, Products, Orders */}
@@ -30,15 +31,18 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           <>
             <NavLink to="/users" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <Users size={20} />
-              Users
+              <span className="nav-label">Users</span>
+              <span className="nav-tooltip">Users</span>
             </NavLink>
             <NavLink to="/products" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <ShoppingBag size={20} />
-              All Products
+              <span className="nav-label">All Products</span>
+              <span className="nav-tooltip">All Products</span>
             </NavLink>
             <NavLink to="/orders" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <ShoppingCart size={20} />
-              All Orders
+              <span className="nav-label">All Orders</span>
+              <span className="nav-tooltip">All Orders</span>
             </NavLink>
           </>
         )}
@@ -48,11 +52,13 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           <>
             <NavLink to="/products" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <ShoppingBag size={20} />
-              My Products
+              <span className="nav-label">My Products</span>
+              <span className="nav-tooltip">My Products</span>
             </NavLink>
             <NavLink to="/orders" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <ShoppingCart size={20} />
-              Store Orders
+              <span className="nav-label">Store Orders</span>
+              <span className="nav-tooltip">Store Orders</span>
             </NavLink>
           </>
         )}
@@ -62,21 +68,22 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
           <>
             <NavLink to="/products" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <ShoppingBag size={20} />
-              Browse Products
+              <span className="nav-label">Browse Products</span>
+              <span className="nav-tooltip">Browse Products</span>
             </NavLink>
             <NavLink to="/orders" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
               <ShoppingCart size={20} />
-              My Orders
+              <span className="nav-label">My Orders</span>
+              <span className="nav-tooltip">My Orders</span>
             </NavLink>
           </>
         )}
         
-        <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-          <NavLink to="/settings" className="nav-item" onClick={closeSidebar}>
-            <Settings size={20} />
-            Settings
-          </NavLink>
-        </div>
+        <NavLink to="/settings" className={({isActive}) => isActive ? "nav-item active" : "nav-item"} onClick={closeSidebar}>
+          <Settings size={20} />
+          <span className="nav-label">Settings</span>
+          <span className="nav-tooltip">Settings</span>
+        </NavLink>
       </nav>
     </aside>
   );
